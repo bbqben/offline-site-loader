@@ -1,5 +1,5 @@
 const CACHE = "pagekeep-app-v1";
-const ASSETS=["./","./index.html","./styles.css","./src/app.js","./src/path-utils.mjs","./vendor/jszip.min.js","./manifest.webmanifest","./icons/icon.svg"];
+const ASSETS=["./","./index.html","./styles.css","./src/app.js","./src/path-utils.mjs","./vendor/jszip.min.js","./manifest.webmanifest","./icons/icon.svg","./icons/apple-touch-icon.png"];
 self.addEventListener("install",(event)=>event.waitUntil(caches.open(CACHE).then((c)=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",(event)=>event.waitUntil(Promise.all([
   caches.keys().then((keys)=>Promise.all(keys.filter((k)=>k.startsWith("pagekeep-app-")&&k!==CACHE).map((k)=>caches.delete(k)))),

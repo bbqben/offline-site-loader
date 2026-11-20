@@ -322,6 +322,7 @@ async function buildViewerDocument(site,pagePath,hash) {
     if (cssFile) {
       const style = doc.createElement("style");
       style.textContent = await rewriteCss(await cssFile.blob.text(),target.path,0,new Set([target.path]));
+      style.setAttribute("data-pagekeep-processed","");
       link.replaceWith(style);
     } else link.remove();
   }
