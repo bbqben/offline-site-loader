@@ -1,9 +1,8 @@
-import {normalizeArchivePath,isHtmlFile,chooseStartPage,deriveRootPrefix,resolveLocalPath,readableName,chooseLargeGuideSubset} from "./path-utils.mjs";
+import {normalizeArchivePath,isHtmlFile,chooseStartPage,deriveRootPrefix,resolveLocalPath,readableName} from "./path-utils.mjs";
 
 const $ = (id) => document.getElementById(id);
 const DB_NAME = "pagekeep-library-v1";
 const MAX_ZIP = 500 * 1024 * 1024;
-const MAX_FILES = 20000;
 const MAX_UNPACKED = 1024 * 1024 * 1024;
 const MAX_ONE = 120 * 1024 * 1024;
 const MAX_PAGE_ASSETS = 36 * 1024 * 1024;
@@ -107,21 +106,8 @@ async function importZip(file) {
     if (entry.dir || !path || path.startsWith("__MACOSX/") || /(^|\/)\.DS_Store$/.test(path)) continue;
     found.set(path,entry);
   }
-  let entries = [...found.entries()];
+  const entries = [...found.entries()];
   if (!entries.length) throw new Error("No files were found in this ZIP.");
-  let guideSubset = null;
-  if (entries.length > MAX_FILES) {
-    guideSubset = chooseLargeGuideSubset(entries.map(([path]) => path), MAX_FILES);
-    if (guideSubset) {
-      const allowed = new Set(guideSubset.paths);
-      entries = entries.filter(([path]) => allowed.has(path));
-      message("Large ZIP detected. Importing the guide and shared assets only (" + entries.length + " files)…");
-    }
-  }
-  if (entries.length > MAX_FILES) {
-    throw new Error("This archive contains " + entries.length.toLocaleString() +
-      " files even after guide filtering. Please import a smaller website-only ZIP.");
-  }
   const allPaths = entries.map(([path]) => path);
   const startPath = chooseStartPage(allPaths);
   if (!startPath) throw new Error("The ZIP has no HTML pages. Download a website mirror first.");
@@ -133,22 +119,38 @@ async function importZip(file) {
   }
   const site = {
     id: crypto.randomUUID(), title, origin, rootPrefix, startPath,
-    pages: allPaths.filter(isHtmlFile).sort(), filePaths: allPaths, guideOnly: !!guideSubset,
+    pages: allPaths.filter(isHtmlFile).sort(), filePaths: allPaths,
     fileCount: allPaths.length, bytes:0, createdAt:Date.now(), lastOpened:Date.now()
   };
   let total = 0;
   try {
-    for (let index = 0; index < entries.length; index += 12) {
-      const chunk = entries.slice(index,index+12);
-      const decoded = await Promise.all(chunk.map(async ([path,entry]) => {
-        const bytes = await entry.async("uint8array");
-        if (bytes.byteLength > MAX_ONE) throw new Error("An archive file exceeds the 120 MB limit: " + path);
-        return {siteId:site.id,path,blob:new Blob([bytes],{type:mime(path)}),byteCount:bytes.byteLength};
-      }));
-      for (const item of decoded) total += item.byteCount;
-      if (total > MAX_UNPACKED) throw new Error("This website exceeds the 1 GB unpacked limit.");
-      await putFiles(decoded);
-      message("Saving files locally… " + Math.min(index + chunk.length,entries.length) + " / " + entries.length);
+    let batch = [];
+    let batchBytes = 0;
+    for (let index = 0; index < entries.length; index++) {
+      const [path,entry] = entries[index];
+      // Decode files sequentially rather than inflating multiple ZIP entries at once.
+      const bytes = await entry.async("uint8array");
+      if (bytes.byteLength > MAX_ONE) {
+        throw new Error("An archive file exceeds the 120 MB limit: " + path);
+      }
+      total += bytes.byteLength;
+      if (total > MAX_UNPACKED) {
+        throw new Error("This website exceeds the 1 GB unpacked limit.");
+      }
+      batch.push({siteId:site.id,path,blob:new Blob([bytes],{type:mime(path)}),byteCount:bytes.byteLength});
+      batchBytes += bytes.byteLength;
+      // Use small transactions to keep working memory predictable on mobile.
+      if (batch.length >= 8 || batchBytes >= 4 * 1024 * 1024 || index === entries.length - 1) {
+        await putFiles(batch);
+        batch = [];
+        batchBytes = 0;
+      }
+      if ((index + 1) % 25 === 0 || index === entries.length - 1) {
+        message("Saving files locally… " + (index + 1).toLocaleString() +
+          " / " + entries.length.toLocaleString());
+        // Yield periodically so iOS can paint progress and respond to taps.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
     }
     site.bytes = total;
     await putSite(site);
@@ -414,7 +416,7 @@ function setupListeners() {
       renderSites();
       $("import-form").reset();
       $("file-choice").textContent = "Choose a ZIP archive";
-      message("Imported " + site.pages.length + " pages locally." + (site.guideOnly ? " Guide-only mode: unrelated repository sections were skipped." : ""));
+      message("Imported " + site.pages.length + " pages locally.");
       await selectSite(site.id);
     } catch(err) {
       message(err.message || "Could not import this ZIP.",true);

@@ -94,3 +94,41 @@ button:focus-visible,input:focus-visible{outline:2px solid #80e4bd;outline-offse
     }
   }
 }
+
+/* Always-visible release version, including in installed iPhone PWAs. */
+.app-footer{
+  box-sizing:border-box;
+  flex:none;
+  height:32px;
+  min-height:32px;
+  padding:0 20px;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:6px;
+  background:#101b27;
+  border-top:1px solid #2c3b46;
+  color:#8ca4aa;
+  font-size:11px;
+  letter-spacing:.01em;
+}
+.app-footer strong{color:#d3e4df;font-weight:650}
+@media(max-width:800px){
+  .layout,.sidebar,.workspace{min-height:calc(100dvh - 68px - 32px)}
+  .reader-body{height:calc(100dvh - 68px - 75px - 52px - 32px)}
+}
+@supports (padding-bottom: env(safe-area-inset-bottom)){
+  .app-footer{
+    height:calc(32px + env(safe-area-inset-bottom));
+    min-height:calc(32px + env(safe-area-inset-bottom));
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  @media(max-width:800px){
+    .layout,.sidebar,.workspace{
+      min-height:calc(100dvh - 68px - env(safe-area-inset-top) - 32px - env(safe-area-inset-bottom));
+    }
+    .reader-body{
+      height:calc(100dvh - 68px - env(safe-area-inset-top) - 75px - 52px - 32px - env(safe-area-inset-bottom));
+    }
+  }
+}

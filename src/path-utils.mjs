@@ -92,30 +92,3 @@ export function readableName(path) {
   else name = name.replace(/\.(?:html?|xhtml)$/i, "");
   return name.replace(/[-_]+/g, " ").replace(/\b\w/g, (v) => v.toUpperCase()) || "Home";
 }
-
-/**
- * A repository ZIP can contain tens of thousands of unrelated pages.
- * When it is too large and contains a standalone guide, keep just the
- * guide and shared static assets instead of extracting the entire repo.
- * This scans ZIP entry names only (no decompression).
- */
-export function chooseLargeGuideSubset(paths, maxFiles) {
-  if (paths.length <= maxFiles) return null;
-  const guideHomes = paths.filter((path) => /(?:^|\/)guide\/index\.html?$/i.test(path));
-  if (!guideHomes.length) return null;
-  guideHomes.sort((a,b) => a.split("/").length - b.split("/").length || a.length - b.length);
-  const home = guideHomes[0];
-  const prefix = home.slice(0, home.length - "guide/index.html".length);
-  const supportedAsset = /\.(?:css|png|jpe?g|gif|webp|svg|avif|ico|woff2?|ttf|otf)$/i;
-  const result = paths.filter((path) => {
-    if (!path.startsWith(prefix)) return false;
-    const relative = path.slice(prefix.length);
-    if (relative.startsWith("guide/")) return true;
-    if (/^(?:_astro|assets|static|images|img|fonts|media|icons|_images)\//i.test(relative)) {
-      return supportedAsset.test(relative);
-    }
-    return /^(?:favicon(?:[-.]|$)|apple-touch-icon|site\.webmanifest)/i.test(relative)
-      && supportedAsset.test(relative);
-  });
-  return result.includes(home) ? { paths: result, home, prefix } : null;
-}
