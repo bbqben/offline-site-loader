@@ -2,10 +2,10 @@ import {normalizeArchivePath,isHtmlFile,chooseStartPage,deriveRootPrefix,resolve
 
 const $ = (id) => document.getElementById(id);
 const DB_NAME = "pagekeep-library-v1";
-const MAX_ZIP = 100 * 1024 * 1024;
-const MAX_FILES = 3000;
-const MAX_UNPACKED = 250 * 1024 * 1024;
-const MAX_ONE = 40 * 1024 * 1024;
+const MAX_ZIP = 500 * 1024 * 1024;
+const MAX_FILES = 20000;
+const MAX_UNPACKED = 1024 * 1024 * 1024;
+const MAX_ONE = 120 * 1024 * 1024;
 const MAX_PAGE_ASSETS = 36 * 1024 * 1024;
 const state = { db:null, sites:[], active:null, files:new Set(), page:"", history:[], cursor:-1, loading:false, renderId:0 };
 
@@ -91,7 +91,7 @@ function setImportBusy(busy) {
 }
 async function importZip(file) {
   if (!window.JSZip) throw new Error("ZIP support is unavailable. Try opening the app online once.");
-  if (file.size > MAX_ZIP) throw new Error("ZIP exceeds the 100 MB import limit.");
+  if (file.size > MAX_ZIP) throw new Error("ZIP exceeds the 500 MB import limit.");
   const title = $("site-title").value.trim().slice(0,80) || file.name.replace(/\.zip$/i,"").replace(/[-_]/g," ");
   let origin = "";
   if ($("site-url").value.trim()) {
@@ -109,7 +109,7 @@ async function importZip(file) {
   }
   const entries = [...found.entries()];
   if (!entries.length) throw new Error("No files were found in this ZIP.");
-  if (entries.length > MAX_FILES) throw new Error("This ZIP contains over 3,000 files.");
+  if (entries.length > MAX_FILES) throw new Error("This ZIP contains over 20,000 files.");
   const allPaths = entries.map(([path]) => path);
   const startPath = chooseStartPage(allPaths);
   if (!startPath) throw new Error("The ZIP has no HTML pages. Download a website mirror first.");
@@ -126,11 +126,11 @@ async function importZip(file) {
       const chunk = entries.slice(index,index+12);
       const decoded = await Promise.all(chunk.map(async ([path,entry]) => {
         const bytes = await entry.async("uint8array");
-        if (bytes.byteLength > MAX_ONE) throw new Error("An archive file exceeds the 40 MB limit: " + path);
+        if (bytes.byteLength > MAX_ONE) throw new Error("An archive file exceeds the 120 MB limit: " + path);
         return {siteId:site.id,path,blob:new Blob([bytes],{type:mime(path)}),byteCount:bytes.byteLength};
       }));
       for (const item of decoded) total += item.byteCount;
-      if (total > MAX_UNPACKED) throw new Error("This website exceeds the 250 MB unpacked limit.");
+      if (total > MAX_UNPACKED) throw new Error("This website exceeds the 1 GB unpacked limit.");
       await putFiles(decoded);
       message("Saving files locally… " + Math.min(index + chunk.length,entries.length) + " / " + entries.length);
     }

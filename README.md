@@ -38,7 +38,7 @@ Transfer the ZIP using AirDrop or Files, then import it in Pagekeep. The optiona
 - V1 imports ZIP files; V2 can add URL crawling.
 - Static HTML works best. Original site scripts, interactive search, forms, APIs and login flows will not work.
 - Resources not included in the ZIP cannot load while offline.
-- Limits: ZIP 100 MiB; total uncompressed 250 MiB; 3,000 files; 40 MiB per file.
+- Limits: ZIP 500 MiB; total uncompressed 1 GiB; 20,000 files; 120 MiB per file. Large ZIPs may exhaust iPhone Safari memory or device storage; import smaller guide-only mirrors when possible.
 - iOS may evict website data. Retain your original ZIP outside the app in the Files app.
 - Malicious HTML and CSS are untrusted. Imported content is sanitized, run in an opaque-origin sandbox and denied network access by CSP; don't import unknown archives.
 

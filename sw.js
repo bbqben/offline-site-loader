@@ -1,4 +1,4 @@
-const CACHE = "pagekeep-app-v1";
+const CACHE = "pagekeep-app-v2";
 const ASSETS=["./","./index.html","./styles.css","./src/app.js","./src/path-utils.mjs","./vendor/jszip.min.js","./manifest.webmanifest","./icons/icon.svg","./icons/apple-touch-icon.png"];
 self.addEventListener("install",(event)=>event.waitUntil(caches.open(CACHE).then((c)=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",(event)=>event.waitUntil(Promise.all([
