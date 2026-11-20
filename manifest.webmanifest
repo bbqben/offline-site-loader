@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Pagekeep — Offline website reader",
+  "short_name": "Pagekeep",
+  "description": "Save and browse imported website archives offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#101b27",
+  "background_color": "#101b27",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

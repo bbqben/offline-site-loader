@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#101b27">
+  <meta name="description" content="Keep websites for offline reading on iPhone.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Pagekeep — Offline website reader</title>
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./vendor/jszip.min.js" defer></script>
+  <script src="./src/app.js" type="module"></script>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">▤</span>
+      <span><strong>pagekeep</strong><small>offline website library</small></span>
+    </div>
+    <div class="status-pill"><span class="status-dot" id="status-dot"></span><span id="network-status">Checking offline support</span></div>
+  </header>
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="heading"><span class="eyebrow">YOUR COLLECTION</span><h2>Saved websites <span class="count" id="site-count">0</span></h2></div>
+      <div id="site-list" class="site-list"></div>
+      <form id="import-form" class="import-panel">
+        <div class="import-heading"><span class="plus-icon">+</span><div><strong>Add a website</strong><small>Already downloaded? Import it here.</small></div></div>
+        <label for="archive-file" class="dropzone"><span class="upload-icon" aria-hidden="true">↥</span><strong id="file-choice">Choose a ZIP archive</strong><small>Pages, images and styles together</small></label>
+        <input type="file" id="archive-file" class="visually-hidden" accept=".zip,application/zip" required>
+        <label for="site-title" class="input-label">Display name <span>optional</span></label>
+        <input type="text" id="site-title" class="field" maxlength="80" placeholder="e.g. HeartGold Guide">
+        <label for="site-url" class="input-label">Original website URL <span>optional</span></label>
+        <input type="url" id="site-url" class="field" placeholder="https://example.com/guide/">
+        <button type="submit" id="import-button" class="primary-button">Import website <span>↗</span></button>
+        <p id="import-feedback" class="feedback" role="status" aria-live="polite"></p>
+      </form>
+      <p class="tip"><span>✦</span> Keep the original ZIP in Files. iOS can clear website storage when space is low.</p>
+    </aside>
+    <section class="workspace" aria-label="Website reader">
+      <div id="empty-state" class="empty-state">
+        <div class="cover-art" aria-hidden="true"><div class="art-page back"></div><div class="art-page middle"></div><div class="art-page front"><span></span><span></span><span></span><i></i></div><div class="spark one">✧</div><div class="spark two">✦</div></div>
+        <span class="eyebrow">YOUR OWN CORNER OF THE WEB</span>
+        <h1>Take the internet<br><em>off the grid.</em></h1>
+        <p>Bring a whole website with you. Import a ZIP once, then browse its linked pages without a signal.</p>
+        <button type="button" id="empty-import" class="primary-button empty-import">Choose a ZIP <span>↗</span></button>
+        <div class="steps"><span><b>01</b> Download a site</span><span>→</span><span><b>02</b> Import ZIP</span><span>→</span><span><b>03</b> Read offline</span></div>
+      </div>
+      <div id="reader-state" class="reader-state" hidden>
+        <div class="reader-head">
+          <div class="reader-identity"><button type="button" id="show-library" class="mobile-library" aria-label="Back to library">←</button><div><span class="eyebrow">NOW READING</span><h1 id="reader-site-title">Website</h1></div></div>
+          <button type="button" id="delete-site" class="delete-button" title="Delete this saved website">Remove site</button>
+        </div>
+        <div class="toolbar">
+          <button id="go-back" type="button" class="tool-button" title="Back" aria-label="Back">←</button>
+          <button id="go-forward" type="button" class="tool-button" title="Forward" aria-label="Forward">→</button>
+          <button id="go-home" type="button" class="tool-button" title="Home" aria-label="Home">⌂</button>
+          <span class="separator"></span>
+          <span id="reader-page-path" class="path-readout">index.html</span>
+          <button id="toggle-pages" type="button" class="tool-button toggle-pages" aria-expanded="false">☷ Pages</button>
+        </div>
+        <div class="reader-body">
+          <nav id="page-nav" class="page-nav" aria-label="Saved pages">
+            <div class="nav-heading"><div><span class="eyebrow">IN THIS WEBSITE</span><h3>Pages <span id="page-count"></span></h3></div><button id="hide-pages" class="page-close" type="button" aria-label="Close page list">×</button></div>
+            <label class="search-wrap"><span>⌕</span><input type="search" id="page-search" placeholder="Find a page…" aria-label="Find a page"></label>
+            <div class="page-list" id="page-list"></div>
+          </nav>
+          <div class="viewport">
+            <div id="viewer-loading" class="loading" role="status">Opening saved page…</div>
+            <iframe id="site-frame" title="Offline website content" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>
