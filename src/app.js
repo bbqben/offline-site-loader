@@ -1,4 +1,4 @@
-import {normalizeArchivePath,isHtmlFile,chooseStartPage,deriveRootPrefix,resolveLocalPath,readableName} from "./path-utils.mjs";
+import {normalizeArchivePath,isHtmlFile,chooseStartPage,deriveRootPrefix,resolveLocalPath,readableName,chooseLargeGuideSubset} from "./path-utils.mjs";
 
 const $ = (id) => document.getElementById(id);
 const DB_NAME = "pagekeep-library-v1";
@@ -107,17 +107,33 @@ async function importZip(file) {
     if (entry.dir || !path || path.startsWith("__MACOSX/") || /(^|\/)\.DS_Store$/.test(path)) continue;
     found.set(path,entry);
   }
-  const entries = [...found.entries()];
+  let entries = [...found.entries()];
   if (!entries.length) throw new Error("No files were found in this ZIP.");
-  if (entries.length > MAX_FILES) throw new Error("This ZIP contains over 20,000 files.");
+  let guideSubset = null;
+  if (entries.length > MAX_FILES) {
+    guideSubset = chooseLargeGuideSubset(entries.map(([path]) => path), MAX_FILES);
+    if (guideSubset) {
+      const allowed = new Set(guideSubset.paths);
+      entries = entries.filter(([path]) => allowed.has(path));
+      message("Large ZIP detected. Importing the guide and shared assets only (" + entries.length + " files)…");
+    }
+  }
+  if (entries.length > MAX_FILES) {
+    throw new Error("This archive contains " + entries.length.toLocaleString() +
+      " files even after guide filtering. Please import a smaller website-only ZIP.");
+  }
   const allPaths = entries.map(([path]) => path);
   const startPath = chooseStartPage(allPaths);
   if (!startPath) throw new Error("The ZIP has no HTML pages. Download a website mirror first.");
   const rootPrefix = deriveRootPrefix(allPaths);
-  if (!origin && rootPrefix) origin = "https://" + rootPrefix.slice(0,-1);
+  if (!origin && rootPrefix) {
+    // GitHub source archives often use example.github.io-main as a folder.
+    const candidate = rootPrefix.slice(0,-1).replace(/-(?:main|master)$/i,"");
+    if (candidate.includes(".") && !candidate.includes("/")) origin = "https://" + candidate;
+  }
   const site = {
     id: crypto.randomUUID(), title, origin, rootPrefix, startPath,
-    pages: allPaths.filter(isHtmlFile).sort(), filePaths: allPaths,
+    pages: allPaths.filter(isHtmlFile).sort(), filePaths: allPaths, guideOnly: !!guideSubset,
     fileCount: allPaths.length, bytes:0, createdAt:Date.now(), lastOpened:Date.now()
   };
   let total = 0;
@@ -398,7 +414,7 @@ function setupListeners() {
       renderSites();
       $("import-form").reset();
       $("file-choice").textContent = "Choose a ZIP archive";
-      message("Imported " + site.pages.length + " pages. Stored only on this device.");
+      message("Imported " + site.pages.length + " pages locally." + (site.guideOnly ? " Guide-only mode: unrelated repository sections were skipped." : ""));
       await selectSite(site.id);
     } catch(err) {
       message(err.message || "Could not import this ZIP.",true);

@@ -36,6 +36,7 @@ Transfer the ZIP using AirDrop or Files, then import it in Pagekeep. The optiona
 ## Limits and safety
 
 - V1 imports ZIP files; V2 can add URL crawling.
+- For very large repository ZIPs with a `guide/index.html` section, Pagekeep automatically imports only `guide/` and common shared static assets (e.g. `_astro/` CSS/images/fonts). Other sections such as `pokemon/` are excluded and their offline links will not work. A dedicated website mirror ZIP is still the best format.
 - Static HTML works best. Original site scripts, interactive search, forms, APIs and login flows will not work.
 - Resources not included in the ZIP cannot load while offline.
 - Limits: ZIP 500 MiB; total uncompressed 1 GiB; 20,000 files; 120 MiB per file. Large ZIPs may exhaust iPhone Safari memory or device storage; import smaller guide-only mirrors when possible.
